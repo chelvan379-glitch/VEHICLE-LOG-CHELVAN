@@ -65,7 +65,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .ynb.yes.act{border-color:var(--green);background:#f0fdf4;color:#166534}
 .ynb.no.act{border-color:var(--red);background:#fff5f5;color:var(--red)}
 
-/* FUEL AMOUNT */
+/* FUEL AMOUNT & DETAILS */
 .fuel-amt-row{background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;padding:11px 13px;margin-bottom:11px}
 .fuel-amt-row label{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:#166534;display:block;margin-bottom:5px}
 .fuel-amt-row input{width:100%;border:1.5px solid #86efac;border-radius:8px;padding:9px 12px;font-size:15px;color:var(--txt);background:#fff;outline:none}
@@ -116,7 +116,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 /* STATS */
 .sgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .sbox{background:var(--card);border-radius:12px;padding:14px;box-shadow:0 2px 6px rgba(30,58,95,.07);text-align:center}
-.sbox .sv{font-size:26px;font-weight:900;color:var(--navy)}
+.sbox .sv{font-size:24px;font-weight:900;color:var(--navy)}
 .sbox .sl{font-size:11px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:.06em;margin-top:3px}
 
 /* HISTORY */
@@ -125,7 +125,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .tcard.draft{border-left-color:var(--orange);opacity:.88}
 .tcard .td{font-size:11px;color:var(--mute);font-weight:700}
 .tcard .tr{font-size:14px;font-weight:800;color:var(--txt);margin:4px 0 6px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
-.tcard .tm confession{display:flex;gap:12px;flex-wrap:wrap}
+.tcard .tm{display:flex;gap:12px;flex-wrap:wrap;margin-top:4px}
 .tcard .tm span{font-size:12px;color:var(--mute);font-weight:700}
 .tcard .tm strong{color:var(--txt)}
 .fdot{display:inline-block;width:8px;height:8px;border-radius:50%;vertical-align:middle;margin-right:3px}
@@ -133,7 +133,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .edit-btn:hover{border-color:var(--navy);color:var(--navy)}
 
 /* SUMMARY TABLE */
-.stbl{width:100%;border-collapse:collapse;font-size:11px;min-width:480px}
+.stbl{width:100%;border-collapse:collapse;font-size:11px;min-width:640px}
 .stbl th{background:var(--navy);color:#fff;padding:8px 6px;text-align:left;font-size:10px;font-weight:800;white-space:nowrap}
 .stbl td{padding:7px 6px;border-bottom:1px solid var(--bdr);vertical-align:middle}
 .stbl tr:nth-child(even) td{background:#f7f9fc}
@@ -256,9 +256,19 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
       <button class="ynb yes" id="fy-yes" onclick="setFuel(true)">✅ YES</button>
       <button class="ynb no"  id="fy-no"  onclick="setFuel(false)">❌ NO</button>
     </div>
+    
     <div id="fa-row" class="fuel-amt-row hidden">
-      <label>⛽ Fuel Amount Added</label>
-      <input type="number" id="fa-amt" placeholder="e.g. 40" min="0" step="0.5"/>
+      <div class="fld">
+        <label>💳 Payment Method</label>
+        <div class="vtrow" style="margin-bottom:11px">
+          <button class="ynb yes" id="fp-card" onclick="setFuelPayment('Card')">💳 Fuel Card</button>
+          <button class="ynb no"  id="fp-cash" onclick="setFuelPayment('Cash')">💵 Cash</button>
+        </div>
+      </div>
+      <div class="fld" style="margin:0">
+        <label>⛽ Fuel Amount Added (Litres)</label>
+        <input type="number" id="fa-amt" placeholder="e.g. 40" min="0" step="0.5"/>
+      </div>
     </div>
 
     <div class="ctitle" style="margin-top:4px">🛢️ Fuel Balance After Trip</div>
@@ -294,6 +304,20 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 </div>
 
 <div class="pg" id="pg-summary">
+  <div class="card" style="margin-bottom:12px">
+    <div class="ctitle">💰 Month End Claims Summary</div>
+    <div class="sgrid">
+      <div class="sbox" style="background:#f0fdf4; border:1px solid #bbf7d0">
+        <div class="sv" id="claim-cash" style="color:#15803d">0.00 L</div>
+        <div class="sl" style="color:#166534">💵 Total Cash Claim</div>
+      </div>
+      <div class="sbox" style="background:#eff6ff; border:1px solid #bfdbfe">
+        <div class="sv" id="claim-card" style="color:#1d4ed8">0.00 L</div>
+        <div class="sl" style="color:#1e40af">💳 Fuel Card Usage</div>
+      </div>
+    </div>
+  </div>
+
   <div class="card">
     <div class="ctitle" style="justify-content:space-between">
       <span>📊 Monthly Breakdown</span>
@@ -309,13 +333,21 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
             <th>ODO End</th>
             <th>KM</th>
             <th>Top-up</th>
+            <th>Method</th>
             <th>Fuel (L)</th>
             <th>Level</th>
           </tr>
         </thead>
         <tbody id="sum-body"></tbody>
         <tfoot>
-          <tr><td colspan="4" style="font-weight:900">TOTAL</td><td id="sum-total">0 km</td><td></td><td id="sum-fuel-total">0 L</td><td></td></tr>
+          <tr>
+            <td colspan="4" style="font-weight:900">TOTAL</td>
+            <td id="sum-total">0 km</td>
+            <td></td>
+            <td></td>
+            <td id="sum-fuel-total">0 L</td>
+            <td></td>
+          </tr>
         </tfoot>
       </table>
     </div>
@@ -380,8 +412,17 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
         <button class="ynb no"  id="efy-no"  onclick="setEFuel(false)">❌ NO</button>
       </div>
       <div id="efa-row" class="fuel-amt-row hidden">
-        <label>⛽ Fuel Amount Added</label>
-        <input type="number" id="efa-amt" placeholder="e.g. 40" min="0" step="0.5"/>
+        <div class="fld">
+          <label>💳 Payment Method</label>
+          <div class="vtrow" style="margin-bottom:11px">
+            <button class="ynb yes" id="efp-card" onclick="setEFuelPayment('Card')">💳 Fuel Card</button>
+            <button class="ynb no"  id="efp-cash" onclick="setEFuelPayment('Cash')">💵 Cash</button>
+          </div>
+        </div>
+        <div class="fld" style="margin:0">
+          <label>⛽ Fuel Amount Added (Litres)</label>
+          <input type="number" id="efa-amt" placeholder="e.g. 40" min="0" step="0.5"/>
+        </div>
       </div>
       <div class="ctitle" style="margin-top:4px">🛢️ Fuel Balance After Trip</div>
       <div class="gauge-wrap">
@@ -420,6 +461,8 @@ let fuelLevel  = 0;
 let efuelLevel = 0;
 let fuelTopup  = null;
 let efuelTopup = null;
+let fuelPayment = null; 
+let efuelPayment = null; 
 let vtype  = 'perm';
 let evtype = 'perm';
 let editId = null;
@@ -436,17 +479,6 @@ dbRequest.onupgradeneeded = function(e) {
 
 dbRequest.onsuccess = function(e) {
   db = e.target.result;
-  // Migrate existing data if it's there
-  let legacyData = localStorage.getItem('dnb-trips2');
-  if (legacyData) {
-    try {
-      let oldTrips = JSON.parse(legacyData);
-      let tx = db.transaction('trips', 'readwrite');
-      let store = tx.objectStore('trips');
-      oldTrips.forEach(t => store.put(t));
-      localStorage.removeItem('dnb-trips2');
-    } catch(err) { console.error(err); }
-  }
   loadTripsFromDB();
 };
 
@@ -469,15 +501,6 @@ function persistToDB(tripData, callback) {
   let tx = db.transaction('trips', 'readwrite');
   let store = tx.objectStore('trips');
   store.put(tripData);
-  tx.oncomplete = function() {
-    if(callback) callback();
-  };
-}
-
-function removeFromDB(id, callback) {
-  let tx = db.transaction('trips', 'readwrite');
-  let store = tx.objectStore('trips');
-  store.delete(id);
   tx.oncomplete = function() {
     if(callback) callback();
   };
@@ -582,21 +605,46 @@ function setEVtype(t) {
 }
 
 /* ═══════════════════════════════
-   FUEL TOPUP
+   FUEL TRACKING OPTIONS
 ═══════════════════════════════ */
 function setFuel(v) {
   fuelTopup = v;
   document.getElementById('fy-yes').classList.toggle('act', v===true);
   document.getElementById('fy-no').classList.toggle('act',  v===false);
   document.getElementById('fa-row').classList.toggle('hidden', !v);
-  if (!v) document.getElementById('fa-amt').value = '';
+  if (!v) {
+    document.getElementById('fa-amt').value = '';
+    fuelPayment = null;
+    document.getElementById('fp-card').classList.remove('act');
+    document.getElementById('fp-cash').classList.remove('act');
+  } else {
+    setFuelPayment('Card'); // Default selection matching UI styling
+  }
 }
+
+function setFuelPayment(method) {
+  fuelPayment = method;
+  document.getElementById('fp-card').classList.toggle('act', method === 'Card');
+  document.getElementById('fp-cash').classList.toggle('act', method === 'Cash');
+}
+
 function setEFuel(v) {
   efuelTopup = v;
   document.getElementById('efy-yes').classList.toggle('act', v===true);
   document.getElementById('efy-no').classList.toggle('act',  v===false);
   document.getElementById('efa-row').classList.toggle('hidden', !v);
-  if (!v) document.getElementById('efa-amt').value = '';
+  if (!v) {
+    document.getElementById('efa-amt').value = '';
+    efuelPayment = null;
+    document.getElementById('efp-card').classList.remove('act');
+    document.getElementById('efp-cash').classList.remove('act');
+  }
+}
+
+function setEFuelPayment(method) {
+  efuelPayment = method;
+  document.getElementById('efp-card').classList.toggle('act', method === 'Card');
+  document.getElementById('efp-cash').classList.toggle('act', method === 'Cash');
 }
 
 /* ═══════════════════════════════
@@ -633,6 +681,7 @@ function saveTrip(draft) {
   if (!draft) {
     if (!ptA || !ptB) { alert('Please enter Point A (From) and Point B (To).'); return; }
     if (isNaN(odoS) || isNaN(odoE) || odoE < odoS) { alert('Please enter valid ODO Start and End.'); return; }
+    if (fuelTopup === true && !fuelPayment) { alert('Please select a payment method.'); return; }
   }
 
   const km = (!isNaN(odoS) && !isNaN(odoE) && odoE >= odoS) ? parseFloat((odoE - odoS).toFixed(1)) : null;
@@ -644,7 +693,9 @@ function saveTrip(draft) {
     odoStart: isNaN(odoS) ? null : odoS,
     odoEnd:   isNaN(odoE) ? null : odoE,
     km, plate, vtype,
-    fuelTopup, fuelAmount: fuelTopup && fAmt ? parseFloat(fAmt) : null,
+    fuelTopup, 
+    fuelPayment: fuelTopup ? fuelPayment : null,
+    fuelAmount: fuelTopup && fAmt ? parseFloat(fAmt) : null,
     fuelLevel, draft
   };
 
@@ -664,10 +715,12 @@ function clearForm() {
   });
   document.getElementById('tkm').textContent = '— km';
   document.getElementById('tkmv').value = '';
-  fuelTopup = null; fuelLevel = 0;
+  fuelTopup = null; fuelLevel = 0; fuelPayment = null;
   document.getElementById('fy-yes').classList.remove('act');
   document.getElementById('fy-no').classList.remove('act');
   document.getElementById('fa-row').classList.add('hidden');
+  document.getElementById('fp-card').classList.remove('act');
+  document.getElementById('fp-cash').classList.remove('act');
   setVtype('perm');
   buildGauge('g-bars', 'g-ptr', 'g-foot', 0, 'tapGauge');
 }
@@ -694,6 +747,10 @@ function openEdit(id) {
   document.getElementById('efy-no').classList.toggle('act',  t.fuelTopup===false);
   document.getElementById('efa-row').classList.toggle('hidden', !t.fuelTopup);
   document.getElementById('efa-amt').value = t.fuelAmount ?? '';
+
+  efuelPayment = t.fuelPayment;
+  document.getElementById('efp-card').classList.toggle('act', t.fuelPayment === 'Card');
+  document.getElementById('efp-cash').classList.toggle('act', t.fuelPayment === 'Cash');
 
   efuelLevel = t.fuelLevel || 0;
   buildGauge('eg-bars', 'eg-ptr', 'eg-foot', efuelLevel, 'tapEGauge');
@@ -726,6 +783,7 @@ function updateTrip() {
     odoEnd:   isNaN(odoE) ? null : odoE,
     km, plate, vtype: evtype,
     fuelTopup: efuelTopup,
+    fuelPayment: efuelTopup ? efuelPayment : null,
     fuelAmount: efuelTopup && fAmt ? parseFloat(fAmt) : null,
     fuelLevel: efuelLevel,
     draft: false
@@ -738,7 +796,7 @@ function updateTrip() {
 }
 
 /* ═══════════════════════════════
-   RENDER
+   RENDER METRICS & HISTORY
 ═══════════════════════════════ */
 function fuelColor(lvl) {
   return lvl <= 1 ? '#e63946' : lvl <= 3 ? '#fb8500' : '#2dc653';
@@ -762,7 +820,7 @@ function renderHistory() {
         <span>ODO: <strong>${t.odoStart??'—'} → ${t.odoEnd??'—'} km</strong></span>
         <span>KM: <strong>${t.km!=null?t.km+' km':'—'}</strong></span>
         <span><span class="fdot" style="background:${fuelColor(t.fuelLevel)}"></span>Fuel: <strong>${t.fuelLevel}/8</strong></span>
-        ${t.fuelTopup ? `<span>⛽ Topped up${t.fuelAmount ? ': <strong>'+t.fuelAmount+' L</strong>' : ''}</span>` : ''}
+        ${t.fuelTopup ? `<span>⛽ ${t.fuelPayment === 'Cash' ? '💵 Cash' : '💳 Card'}${t.fuelAmount ? ': <strong>'+t.fuelAmount+' L</strong>' : ''}</span>` : ''}
       </div>
     </div>
   `).join('');
@@ -770,13 +828,22 @@ function renderHistory() {
 
 function renderSummary() {
   const body = document.getElementById('sum-body');
-  const totalKm   = trips.reduce((s,t) => s + (t.km||0), 0);
+  const totalKm = trips.reduce((s,t) => s + (t.km||0), 0);
   const totalFuel = trips.reduce((s,t) => s + (t.fuelAmount||0), 0);
+  
+  // Calculate Claims
+  const cashClaim = trips.reduce((s,t) => s + (t.fuelPayment === 'Cash' ? (t.fuelAmount||0) : 0), 0);
+  const cardUsage = trips.reduce((s,t) => s + (t.fuelPayment === 'Card' ? (t.fuelAmount||0) : 0), 0);
+
   document.getElementById('sum-total').textContent = totalKm.toFixed(1) + ' km';
   document.getElementById('sum-fuel-total').textContent = totalFuel.toFixed(1) + ' L';
+  
+  // Update Easy Month Checking Widgets
+  document.getElementById('claim-cash').textContent = cashClaim.toFixed(1) + ' L';
+  document.getElementById('claim-card').textContent = cardUsage.toFixed(1) + ' L';
 
   if (!trips.length) {
-    body.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--mute);padding:20px">No data yet</td></tr>';
+    body.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--mute);padding:20px">No data yet</td></tr>';
     return;
   }
   body.innerHTML = trips.map(t => `
@@ -787,6 +854,7 @@ function renderSummary() {
       <td>${t.odoEnd??'—'}</td>
       <td>${t.km!=null?t.km:'—'}</td>
       <td>${t.fuelTopup===true?'✅':t.fuelTopup===false?'❌':'—'}</td>
+      <td>${t.fuelPayment ? (t.fuelPayment === 'Cash' ? '💵 Cash' : '💳 Card') : '—'}</td>
       <td>${t.fuelAmount!=null?t.fuelAmount+' L':'—'}</td>
       <td><span class="fdot" style="background:${fuelColor(t.fuelLevel)}"></span>${t.fuelLevel}/8</td>
     </tr>
@@ -797,7 +865,6 @@ function renderStats() {
   const total = trips.reduce((s,t) => s+(t.km||0), 0);
   const now   = new Date();
   const mth   = trips.filter(t => {
-    // Basic safety fallback logic parsing custom data format safely
     try {
       let parts = t.date.split(' ');
       let currentMonth = now.toLocaleDateString('en-MY', {month:'short'});
