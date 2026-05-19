@@ -147,10 +147,19 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .modal-close{background:none;border:none;font-size:22px;cursor:pointer;color:var(--mute);padding:4px}
 .hidden{display:none}
 
-/* DRAFT BANNER */
-.draft-banner{background:#fff8e7;border:1.5px solid var(--gold);border-radius:11px;padding:11px 14px;margin-bottom:11px;display:flex;align-items:center;justify-content:space-between;cursor:pointer}
-.draft-banner .db-txt{font-size:13px;font-weight:700;color:var(--gold)}
-.draft-banner .db-arr{font-size:18px;color:var(--gold)}
+/* ═════ PRINT VIEW FOR PDF ═════ */
+@media print {
+  body { background: #fff; color: #000; padding-bottom: 0; }
+  .hdr, .nav, .card:has(.exp-row), .edit-btn, button, .ctitle button { display: none !important; }
+  .pg { display: none !important; }
+  #pg-summary { display: block !important; padding: 0; }
+  .card { box-shadow: none; border: none; padding: 0; }
+  .tbl-scroll { overflow-x: visible; }
+  .stbl { min-width: 100%; font-size: 12px; }
+  .stbl th { background: #1e3a5f !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .stbl td { border-bottom: 1px solid #000; }
+  .stbl tfoot td { background: #fff8e7 !important; color: #1e3a5f !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
 </style>
 </head>
 <body>
@@ -163,13 +172,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   </div>
 </div>
 
-<!-- ══════ STATS PAGE ══════ -->
 <div class="pg act" id="pg-stats">
-
-  <div id="draft-notice" class="draft-banner hidden" onclick="showPage('add')">
-    <div class="db-txt">⚠️ Draft In Progress — Tap to continue</div>
-    <div class="db-arr">›</div>
-  </div>
 
   <div class="sgrid" style="margin-bottom:12px">
     <div class="sbox"><div class="sv" id="s-total">0 km</div><div class="sl">Total Distance</div></div>
@@ -187,27 +190,24 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
     <div class="ctitle">💾 Backup &amp; Restore</div>
     <div class="exp-row">
       <button class="btn-exp" onclick="exportJSON()">📤 Export JSON</button>
-      <button class="btn-exp" style="background:#0f766e" onclick="exportCSV()">📊 Export CSV</button>
+      <button class="btn-exp" style="background:#0f766e" onclick="exportPDF()">📊 Export PDF</button>
       <label class="btn-imp" style="cursor:pointer">
         📥 Import JSON
         <input type="file" accept=".json" style="display:none" onchange="importJSON(event)"/>
       </label>
     </div>
-    <p style="font-size:11px;color:var(--mute);margin-top:9px">💡 Export JSON to backup all trips. Import to restore. CSV opens in Excel/Sheets.</p>
+    <p style="font-size:11px;color:var(--mute);margin-top:9px">💡 Export JSON to backup all trips. Import to restore. PDF opens the device print layout window.</p>
   </div>
 
 </div>
 
-<!-- ══════ ADD TRIP PAGE ══════ -->
 <div class="pg" id="pg-add">
 
-  <!-- Driver -->
   <div class="card">
     <div class="ctitle">👤 Name / Driver</div>
     <div class="lockbox">🔒 Default driver locked &nbsp;—&nbsp; CHELVAN</div>
   </div>
 
-  <!-- Vehicle -->
   <div class="card">
     <div class="ctitle">🏷️ Vehicle Type</div>
     <div class="vtrow">
@@ -219,7 +219,6 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
     <div id="vp-input" class="hidden"><div class="fld" style="margin:0"><input type="text" id="tmp-plate" placeholder="Enter plate number"/></div></div>
   </div>
 
-  <!-- TRAVEL ROUTE -->
   <div class="card">
     <div class="ctitle">📍 Travel Route</div>
     <div class="fld">
@@ -233,7 +232,6 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
     </div>
   </div>
 
-  <!-- ODO -->
   <div class="card">
     <div class="ctitle">⏱ Odometer</div>
     <div class="odrow">
@@ -253,7 +251,6 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
     <input type="hidden" id="tkmv" value=""/>
   </div>
 
-  <!-- FUEL -->
   <div class="card">
     <div class="ctitle">⛽ Fuel Tracking</div>
     <div class="fld"><label>Top-up today?</label></div>
@@ -290,7 +287,6 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 
 </div>
 
-<!-- ══════ HISTORY PAGE ══════ -->
 <div class="pg" id="pg-history">
   <div class="card">
     <div class="ctitle" style="justify-content:space-between">
@@ -301,12 +297,11 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   </div>
 </div>
 
-<!-- ══════ SUMMARY PAGE ══════ -->
 <div class="pg" id="pg-summary">
   <div class="card">
     <div class="ctitle" style="justify-content:space-between">
       <span>📊 Monthly Breakdown</span>
-      <button class="btn-exp" style="padding:6px 11px;font-size:12px" onclick="exportCSV()">📄 Export CSV</button>
+      <button class="btn-exp" style="padding:6px 11px;font-size:12px" onclick="exportPDF()">📄 Export PDF</button>
     </div>
     <div class="tbl-scroll">
       <table class="stbl">
@@ -333,7 +328,6 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   </div>
 </div>
 
-<!-- ══════ EDIT MODAL ══════ -->
 <div class="modal-bg hidden" id="edit-modal">
   <div class="modal">
     <div class="modal-hdr">
@@ -416,7 +410,6 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   </div>
 </div>
 
-<!-- BOTTOM NAV -->
 <div class="nav">
   <button class="nb act" id="nb-stats"   onclick="showPage('stats')">  <span class="ni">📊</span>Stats</button>
   <button class="nb"     id="nb-add"     onclick="showPage('add')">    <span class="ni">➕</span>Add Trip</button>
@@ -425,6 +418,9 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 </div>
 
 <script>
+/* ═══════════════════════════════
+   STATE
+═══════════════════════════════ */
 let trips = JSON.parse(localStorage.getItem('dnb-trips2') || '[]');
 let fuelLevel  = 0;
 let efuelLevel = 0;
@@ -434,6 +430,9 @@ let vtype  = 'perm';
 let evtype = 'perm';
 let editId = null;
 
+/* ═══════════════════════════════
+   FUEL GAUGE (0-8)
+═══════════════════════════════ */
 const BAR_COLORS = ['red','red','orange','orange','green','green','green','green'];
 
 function buildGauge(containerId, ptrId, footId, currentLevel, onClick) {
@@ -456,6 +455,7 @@ function buildGauge(containerId, ptrId, footId, currentLevel, onClick) {
   z.className = 'gbar-zero';
   z.innerHTML = `<div class="gbar-zero-sp"></div><div class="gbar-zero-num ${currentLevel===0?'lit':''}" id="${containerId}-n0">0</div>`;
   col.appendChild(z);
+
   setGaugePtr(ptrId, footId, currentLevel);
 }
 
@@ -464,8 +464,9 @@ function refreshGauge(containerId, ptrId, footId, level) {
     const f = document.getElementById(`${containerId}-f${i}`);
     const n = document.getElementById(`${containerId}-n${i}`);
     if (!f) continue;
-    f.className = `gbar-fg ${BAR_COLORS[i-1]} ${i <= level ? 'fill' : ''}`;
-    n.className = `gbar-num ${i <= level ? 'lit' : ''}`;
+    const filled = i <= level;
+    f.className = `gbar-fg ${BAR_COLORS[i-1]} ${filled ? 'fill' : ''}`;
+    n.className = `gbar-num ${filled ? 'lit' : ''}`;
   }
   const n0 = document.getElementById(`${containerId}-n0`);
   if (n0) n0.className = `gbar-zero-num ${level===0?'lit':''}`;
@@ -476,6 +477,7 @@ function setGaugePtr(ptrId, footId, level) {
   const pct = ((8 - level) / 8) * 100;
   const ptr = document.getElementById(ptrId);
   if (ptr) ptr.style.top = pct + '%';
+
   const foot = document.getElementById(footId);
   if (!foot) return;
   const status = level === 0 ? '🔴 Empty!' : level <= 2 ? '🔴 Critical' : level <= 4 ? '🟠 Low' : level <= 6 ? '🟡 Half' : '🟢 Good';
@@ -494,6 +496,9 @@ function tapEGauge(level) {
 buildGauge('g-bars',  'g-ptr',  'g-foot',  0, 'tapGauge');
 buildGauge('eg-bars', 'eg-ptr', 'eg-foot', 0, 'tapEGauge');
 
+/* ═══════════════════════════════
+   VEHICLE TYPE
+═══════════════════════════════ */
 function setVtype(t) {
   vtype = t;
   document.getElementById('vt-perm').className = `ynb yes ${t==='perm'?'act':''}`;
@@ -509,6 +514,9 @@ function setEVtype(t) {
   document.getElementById('evp-input').classList.toggle('hidden',  t!=='temp');
 }
 
+/* ═══════════════════════════════
+   FUEL TOPUP
+═══════════════════════════════ */
 function setFuel(v) {
   fuelTopup = v;
   document.getElementById('fy-yes').classList.toggle('act', v===true);
@@ -524,6 +532,9 @@ function setEFuel(v) {
   if (!v) document.getElementById('efa-amt').value = '';
 }
 
+/* ═══════════════════════════════
+   ODO CALC
+═══════════════════════════════ */
 function calcKm(sId, eId, displayId, hiddenId) {
   const s = parseFloat(document.getElementById(sId).value);
   const e = parseFloat(document.getElementById(eId).value);
@@ -541,6 +552,9 @@ function calcKm(sId, eId, displayId, hiddenId) {
   }
 }
 
+/* ═══════════════════════════════
+   SAVE TRIP
+═══════════════════════════════ */
 function saveTrip(draft) {
   const ptA  = document.getElementById('pt-a').value.trim();
   const ptB  = document.getElementById('pt-b').value.trim();
@@ -590,24 +604,32 @@ function clearForm() {
   buildGauge('g-bars', 'g-ptr', 'g-foot', 0, 'tapGauge');
 }
 
+/* ═══════════════════════════════
+   EDIT TRIP
+═══════════════════════════════ */
 function openEdit(id) {
   editId = id;
   const t = trips.find(x => x.id === id);
   if (!t) return;
+
   document.getElementById('ept-a').value = t.pointA !== '—' ? t.pointA : '';
   document.getElementById('ept-b').value = t.pointB !== '—' ? t.pointB : '';
   document.getElementById('eodo-s').value = t.odoStart ?? '';
   document.getElementById('eodo-e').value = t.odoEnd ?? '';
   calcKm('eodo-s','eodo-e','etkm','etkmv');
+
   setEVtype(t.vtype || 'perm');
   if (t.vtype === 'temp') document.getElementById('etmp-plate').value = t.plate;
+
   efuelTopup = t.fuelTopup;
   document.getElementById('efy-yes').classList.toggle('act', t.fuelTopup===true);
   document.getElementById('efy-no').classList.toggle('act',  t.fuelTopup===false);
   document.getElementById('efa-row').classList.toggle('hidden', !t.fuelTopup);
   document.getElementById('efa-amt').value = t.fuelAmount ?? '';
+
   efuelLevel = t.fuelLevel || 0;
   buildGauge('eg-bars', 'eg-ptr', 'eg-foot', efuelLevel, 'tapEGauge');
+
   document.getElementById('edit-modal').classList.remove('hidden');
 }
 
@@ -620,6 +642,7 @@ function updateTrip() {
   if (!editId) return;
   const idx = trips.findIndex(x => x.id === editId);
   if (idx < 0) return;
+
   const ptA  = document.getElementById('ept-a').value.trim();
   const ptB  = document.getElementById('ept-b').value.trim();
   const odoS = parseFloat(document.getElementById('eodo-s').value);
@@ -627,6 +650,7 @@ function updateTrip() {
   const plate = evtype === 'perm' ? 'VLW7135' : (document.getElementById('etmp-plate').value.trim() || 'N/A');
   const fAmt  = document.getElementById('efa-amt').value;
   const km = (!isNaN(odoS) && !isNaN(odoE) && odoE >= odoS) ? parseFloat((odoE - odoS).toFixed(1)) : null;
+
   trips[idx] = {
     ...trips[idx],
     pointA: ptA || '—', pointB: ptB || '—',
@@ -638,11 +662,15 @@ function updateTrip() {
     fuelLevel: efuelLevel,
     draft: false
   };
+
   persist();
   renderAll();
   closeEdit();
 }
 
+/* ═══════════════════════════════
+   RENDER
+═══════════════════════════════ */
 function fuelColor(lvl) {
   return lvl <= 1 ? '#e63946' : lvl <= 3 ? '#fb8500' : '#2dc653';
 }
@@ -677,6 +705,7 @@ function renderSummary() {
   const totalFuel = trips.reduce((s,t) => s + (t.fuelAmount||0), 0);
   document.getElementById('sum-total').textContent = totalKm.toFixed(1) + ' km';
   document.getElementById('sum-fuel-total').textContent = totalFuel.toFixed(1) + ' L';
+
   if (!trips.length) {
     body.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--mute);padding:20px">No data yet</td></tr>';
     return;
@@ -706,12 +735,13 @@ function renderStats() {
   document.getElementById('s-trips').textContent = trips.length;
   document.getElementById('s-avg').textContent   = avg.toFixed(0)+' km';
   document.getElementById('s-month').textContent = mth.toFixed(0)+' km';
-  const hasDraft = trips.some(t=>t.draft);
-  document.getElementById('draft-notice').classList.toggle('hidden', !hasDraft);
 }
 
 function renderAll() { renderHistory(); renderSummary(); renderStats(); }
 
+/* ═══════════════════════════════
+   EXPORT / IMPORT
+═══════════════════════════════ */
 function dl(name, content, type) {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([content], {type}));
@@ -722,20 +752,12 @@ function exportJSON() {
   dl('dnb-trips-backup.json', JSON.stringify(trips, null, 2), 'application/json');
 }
 
-function exportCSV() {
-  const hdr = ['Date','From (A)','To (B)','Plate','ODO Start','ODO End','KM','Top-up','Fuel Amount (L)','Fuel Level','Draft'];
-  const rows = trips.map(t => [
-    t.date, t.pointA, t.pointB, t.plate,
-    t.odoStart??'', t.odoEnd??'', t.km??'',
-    t.fuelTopup===true?'Yes':t.fuelTopup===false?'No':'',
-    t.fuelAmount??'', t.fuelLevel,
-    t.draft?'Yes':'No'
-  ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(','));
-  dl('dnb-trips.csv', [hdr.join(','), ...rows].join('\n'), 'text/csv;charset=utf-8');
+function exportPDF() {
+  window.print();
 }
 
 function importJSON(ev) {
-  const file = ev.target.files[0]; if (!file) return;
+  const file = ev.target.files; if (!file) return;
   const reader = new FileReader();
   reader.onload = e => {
     try {
@@ -752,6 +774,9 @@ function importJSON(ev) {
   ev.target.value = '';
 }
 
+/* ═══════════════════════════════
+   CLEAR ALL
+═══════════════════════════════ */
 function clearAll() {
   if (!trips.length) return;
   if (!confirm('Delete ALL trips? This cannot be undone.')) return;
@@ -760,6 +785,9 @@ function clearAll() {
   renderAll();
 }
 
+/* ═══════════════════════════════
+   PERSIST + NAV
+═══════════════════════════════ */
 function persist() { localStorage.setItem('dnb-trips2', JSON.stringify(trips)); }
 
 function showPage(name) {
