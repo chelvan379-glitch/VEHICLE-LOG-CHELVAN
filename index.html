@@ -124,7 +124,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .tcard.draft{border-left-color:var(--orange);opacity:.88}
 .tcard .td{font-size:11px;color:var(--mute);font-weight:700}
 .tcard .tr{font-size:14px;font-weight:800;color:var(--txt);margin:4px 0 6px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
-.tcard .tm{display:flex;gap:12px;flex-wrap:wrap}
+.tcard .tm confession{display:flex;gap:12px;flex-wrap:wrap}
 .tcard .tm span{font-size:12px;color:var(--mute);font-weight:700}
 .tcard .tm strong{color:var(--txt)}
 .fdot{display:inline-block;width:8px;height:8px;border-radius:50%;vertical-align:middle;margin-right:3px}
@@ -150,7 +150,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 /* ═════ PRINT VIEW FOR PDF ═════ */
 @media print {
   body { background: #fff; color: #000; padding-bottom: 0; }
-  .hdr, .nav, .card:has(.exp-row), .edit-btn, button, .ctitle button { display: none !important; }
+  .hdr, .nav, .no-print, .edit-btn, button, .ctitle button { display: none !important; }
   .pg { display: none !important; }
   #pg-summary { display: block !important; padding: 0; }
   .card { box-shadow: none; border: none; padding: 0; }
@@ -186,7 +186,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
     <div class="lockbox">🔒 CHELVAN &nbsp;·&nbsp; VLW7135 &nbsp;·&nbsp; DNB Field Operation</div>
   </div>
 
-  <div class="card">
+  <div class="card no-print">
     <div class="ctitle">💾 Backup &amp; Restore</div>
     <div class="exp-row">
       <button class="btn-exp" onclick="exportJSON()">📤 Export JSON</button>
