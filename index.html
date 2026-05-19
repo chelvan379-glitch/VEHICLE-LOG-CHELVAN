@@ -400,4 +400,376 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
         <div class="gauge-body">
           <div class="gauge-left">
             <div class="gauge-ico">⛽</div>
-            <div class="gauge-track" id="eg-t
+            <div class="gauge-track" id="eg-track">
+              <div class="gauge-ptr" id="eg-ptr" style="top:100%">◀</div>
+            </div>
+          </div>
+          <div class="gauge-bars" id="eg-bars"></div>
+        </div>
+        <div class="gauge-foot" id="eg-foot">Level: 0 / 8</div>
+      </div>
+    </div>
+    <div class="brow">
+      <button class="btn btn-save" onclick="updateTrip()">✅ Update Trip</button>
+      <button class="btn btn-clear" onclick="closeEdit()">✕ Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="nav">
+  <button class="nb act" id="nb-stats"   onclick="showPage('stats')">  <span class="ni">📊</span>Stats</button>
+  <button class="nb"     id="nb-add"     onclick="showPage('add')">    <span class="ni">➕</span>Add Trip</button>
+  <button class="nb"     id="nb-history" onclick="showPage('history')"><span class="ni">📋</span>History</button>
+  <button class="nb"     id="nb-summary" onclick="showPage('summary')"><span class="ni">📄</span>Summary</button>
+</div>
+
+<script>
+let trips = JSON.parse(localStorage.getItem('dnb-trips2') || '[]');
+let fuelLevel  = 0;
+let efuelLevel = 0;
+let fuelTopup  = null;
+let efuelTopup = null;
+let vtype  = 'perm';
+let evtype = 'perm';
+let editId = null;
+
+const BAR_COLORS = ['red','red','orange','orange','green','green','green','green'];
+
+function buildGauge(containerId, ptrId, footId, currentLevel, onClick) {
+  const col = document.getElementById(containerId);
+  col.innerHTML = '';
+  for (let i = 8; i >= 1; i--) {
+    const filled = i <= currentLevel;
+    const color  = BAR_COLORS[i-1];
+    const row = document.createElement('div');
+    row.className = 'gbar-row';
+    row.innerHTML = `
+      <div class="gbar-bg" onclick="${onClick}(${i})">
+        <div class="gbar-fg ${color} ${filled ? 'fill' : ''}" id="${containerId}-f${i}"></div>
+      </div>
+      <div class="gbar-num ${filled ? 'lit' : ''}" id="${containerId}-n${i}">${i}</div>
+    `;
+    col.appendChild(row);
+  }
+  const z = document.createElement('div');
+  z.className = 'gbar-zero';
+  z.innerHTML = `<div class="gbar-zero-sp"></div><div class="gbar-zero-num ${currentLevel===0?'lit':''}" id="${containerId}-n0">0</div>`;
+  col.appendChild(z);
+  setGaugePtr(ptrId, footId, currentLevel);
+}
+
+function refreshGauge(containerId, ptrId, footId, level) {
+  for (let i = 1; i <= 8; i++) {
+    const f = document.getElementById(`${containerId}-f${i}`);
+    const n = document.getElementById(`${containerId}-n${i}`);
+    if (!f) continue;
+    f.className = `gbar-fg ${BAR_COLORS[i-1]} ${i <= level ? 'fill' : ''}`;
+    n.className = `gbar-num ${i <= level ? 'lit' : ''}`;
+  }
+  const n0 = document.getElementById(`${containerId}-n0`);
+  if (n0) n0.className = `gbar-zero-num ${level===0?'lit':''}`;
+  setGaugePtr(ptrId, footId, level);
+}
+
+function setGaugePtr(ptrId, footId, level) {
+  const pct = ((8 - level) / 8) * 100;
+  const ptr = document.getElementById(ptrId);
+  if (ptr) ptr.style.top = pct + '%';
+  const foot = document.getElementById(footId);
+  if (!foot) return;
+  const status = level === 0 ? '🔴 Empty!' : level <= 2 ? '🔴 Critical' : level <= 4 ? '🟠 Low' : level <= 6 ? '🟡 Half' : '🟢 Good';
+  foot.textContent = `Level: ${level} / 8  —  ${status}`;
+}
+
+function tapGauge(level) {
+  fuelLevel = level;
+  refreshGauge('g-bars', 'g-ptr', 'g-foot', fuelLevel);
+}
+function tapEGauge(level) {
+  efuelLevel = level;
+  refreshGauge('eg-bars', 'eg-ptr', 'eg-foot', efuelLevel);
+}
+
+buildGauge('g-bars',  'g-ptr',  'g-foot',  0, 'tapGauge');
+buildGauge('eg-bars', 'eg-ptr', 'eg-foot', 0, 'tapEGauge');
+
+function setVtype(t) {
+  vtype = t;
+  document.getElementById('vt-perm').className = `ynb yes ${t==='perm'?'act':''}`;
+  document.getElementById('vt-temp').className = `ynb no  ${t==='temp'?'act':''}`;
+  document.getElementById('vp-locked').classList.toggle('hidden', t!=='perm');
+  document.getElementById('vp-input').classList.toggle('hidden',  t!=='temp');
+}
+function setEVtype(t) {
+  evtype = t;
+  document.getElementById('evt-perm').className = `ynb yes ${t==='perm'?'act':''}`;
+  document.getElementById('evt-temp').className = `ynb no  ${t==='temp'?'act':''}`;
+  document.getElementById('evp-locked').classList.toggle('hidden', t!=='perm');
+  document.getElementById('evp-input').classList.toggle('hidden',  t!=='temp');
+}
+
+function setFuel(v) {
+  fuelTopup = v;
+  document.getElementById('fy-yes').classList.toggle('act', v===true);
+  document.getElementById('fy-no').classList.toggle('act',  v===false);
+  document.getElementById('fa-row').classList.toggle('hidden', !v);
+  if (!v) document.getElementById('fa-amt').value = '';
+}
+function setEFuel(v) {
+  efuelTopup = v;
+  document.getElementById('efy-yes').classList.toggle('act', v===true);
+  document.getElementById('efy-no').classList.toggle('act',  v===false);
+  document.getElementById('efa-row').classList.toggle('hidden', !v);
+  if (!v) document.getElementById('efa-amt').value = '';
+}
+
+function calcKm(sId, eId, displayId, hiddenId) {
+  const s = parseFloat(document.getElementById(sId).value);
+  const e = parseFloat(document.getElementById(eId).value);
+  const disp = document.getElementById(displayId);
+  const hid  = document.getElementById(hiddenId);
+  if (!isNaN(s) && !isNaN(e) && e >= s) {
+    const km = (e - s).toFixed(1);
+    disp.textContent = km + ' km';
+    disp.style.color = 'var(--navy)';
+    if (hid) hid.value = km;
+  } else {
+    disp.textContent = '— km';
+    disp.style.color = 'var(--mute)';
+    if (hid) hid.value = '';
+  }
+}
+
+function saveTrip(draft) {
+  const ptA  = document.getElementById('pt-a').value.trim();
+  const ptB  = document.getElementById('pt-b').value.trim();
+  const odoS = parseFloat(document.getElementById('odo-s').value);
+  const odoE = parseFloat(document.getElementById('odo-e').value);
+  const plate = vtype === 'perm' ? 'VLW7135' : (document.getElementById('tmp-plate').value.trim() || 'N/A');
+  const fAmt  = document.getElementById('fa-amt').value;
+
+  if (!draft) {
+    if (!ptA || !ptB) { alert('Please enter Point A (From) and Point B (To).'); return; }
+    if (isNaN(odoS) || isNaN(odoE) || odoE < odoS) { alert('Please enter valid ODO Start and End.'); return; }
+  }
+
+  const km = (!isNaN(odoS) && !isNaN(odoE) && odoE >= odoS) ? parseFloat((odoE - odoS).toFixed(1)) : null;
+
+  const trip = {
+    id: Date.now(),
+    date: new Date().toLocaleDateString('en-MY', {day:'2-digit',month:'short',year:'numeric'}),
+    pointA: ptA || '—', pointB: ptB || '—',
+    odoStart: isNaN(odoS) ? null : odoS,
+    odoEnd:   isNaN(odoE) ? null : odoE,
+    km, plate, vtype,
+    fuelTopup, fuelAmount: fuelTopup && fAmt ? parseFloat(fAmt) : null,
+    fuelLevel, draft
+  };
+
+  trips.unshift(trip);
+  persist();
+  clearForm();
+  renderAll();
+  if (!draft) { showPage('history'); }
+  else alert('Draft saved! Go to History to complete it later.');
+}
+
+function clearForm() {
+  ['pt-a','pt-b','odo-s','odo-e','fa-amt','tmp-plate'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('tkm').textContent = '— km';
+  document.getElementById('tkmv').value = '';
+  fuelTopup = null; fuelLevel = 0;
+  document.getElementById('fy-yes').classList.remove('act');
+  document.getElementById('fy-no').classList.remove('act');
+  document.getElementById('fa-row').classList.add('hidden');
+  setVtype('perm');
+  buildGauge('g-bars', 'g-ptr', 'g-foot', 0, 'tapGauge');
+}
+
+function openEdit(id) {
+  editId = id;
+  const t = trips.find(x => x.id === id);
+  if (!t) return;
+  document.getElementById('ept-a').value = t.pointA !== '—' ? t.pointA : '';
+  document.getElementById('ept-b').value = t.pointB !== '—' ? t.pointB : '';
+  document.getElementById('eodo-s').value = t.odoStart ?? '';
+  document.getElementById('eodo-e').value = t.odoEnd ?? '';
+  calcKm('eodo-s','eodo-e','etkm','etkmv');
+  setEVtype(t.vtype || 'perm');
+  if (t.vtype === 'temp') document.getElementById('etmp-plate').value = t.plate;
+  efuelTopup = t.fuelTopup;
+  document.getElementById('efy-yes').classList.toggle('act', t.fuelTopup===true);
+  document.getElementById('efy-no').classList.toggle('act',  t.fuelTopup===false);
+  document.getElementById('efa-row').classList.toggle('hidden', !t.fuelTopup);
+  document.getElementById('efa-amt').value = t.fuelAmount ?? '';
+  efuelLevel = t.fuelLevel || 0;
+  buildGauge('eg-bars', 'eg-ptr', 'eg-foot', efuelLevel, 'tapEGauge');
+  document.getElementById('edit-modal').classList.remove('hidden');
+}
+
+function closeEdit() {
+  document.getElementById('edit-modal').classList.add('hidden');
+  editId = null;
+}
+
+function updateTrip() {
+  if (!editId) return;
+  const idx = trips.findIndex(x => x.id === editId);
+  if (idx < 0) return;
+  const ptA  = document.getElementById('ept-a').value.trim();
+  const ptB  = document.getElementById('ept-b').value.trim();
+  const odoS = parseFloat(document.getElementById('eodo-s').value);
+  const odoE = parseFloat(document.getElementById('eodo-e').value);
+  const plate = evtype === 'perm' ? 'VLW7135' : (document.getElementById('etmp-plate').value.trim() || 'N/A');
+  const fAmt  = document.getElementById('efa-amt').value;
+  const km = (!isNaN(odoS) && !isNaN(odoE) && odoE >= odoS) ? parseFloat((odoE - odoS).toFixed(1)) : null;
+  trips[idx] = {
+    ...trips[idx],
+    pointA: ptA || '—', pointB: ptB || '—',
+    odoStart: isNaN(odoS) ? null : odoS,
+    odoEnd:   isNaN(odoE) ? null : odoE,
+    km, plate, vtype: evtype,
+    fuelTopup: efuelTopup,
+    fuelAmount: efuelTopup && fAmt ? parseFloat(fAmt) : null,
+    fuelLevel: efuelLevel,
+    draft: false
+  };
+  persist();
+  renderAll();
+  closeEdit();
+}
+
+function fuelColor(lvl) {
+  return lvl <= 1 ? '#e63946' : lvl <= 3 ? '#fb8500' : '#2dc653';
+}
+
+function renderHistory() {
+  const list = document.getElementById('h-list');
+  const cnt  = document.getElementById('h-count');
+  cnt.textContent = trips.length + ' records';
+  if (!trips.length) { list.innerHTML = '<div class="hemp">No trips yet. Add your first trip!</div>'; return; }
+  list.innerHTML = trips.map(t => `
+    <div class="tcard ${t.draft?'draft':''}">
+      <button class="edit-btn" onclick="openEdit(${t.id})">✏️ Edit</button>
+      <div class="td">${t.date}${t.draft?' 🕐 DRAFT':''} · ${t.plate}</div>
+      <div class="tr">
+        <span class="rbadge a">A</span>${t.pointA}
+        <span style="color:var(--mute)">→</span>
+        <span class="rbadge b">B</span>${t.pointB}
+      </div>
+      <div class="tm">
+        <span>ODO: <strong>${t.odoStart??'—'} → ${t.odoEnd??'—'} km</strong></span>
+        <span>KM: <strong>${t.km!=null?t.km+' km':'—'}</strong></span>
+        <span><span class="fdot" style="background:${fuelColor(t.fuelLevel)}"></span>Fuel: <strong>${t.fuelLevel}/8</strong></span>
+        ${t.fuelTopup ? `<span>⛽ Topped up${t.fuelAmount ? ': <strong>'+t.fuelAmount+' L</strong>' : ''}</span>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderSummary() {
+  const body = document.getElementById('sum-body');
+  const totalKm   = trips.reduce((s,t) => s + (t.km||0), 0);
+  const totalFuel = trips.reduce((s,t) => s + (t.fuelAmount||0), 0);
+  document.getElementById('sum-total').textContent = totalKm.toFixed(1) + ' km';
+  document.getElementById('sum-fuel-total').textContent = totalFuel.toFixed(1) + ' L';
+  if (!trips.length) {
+    body.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--mute);padding:20px">No data yet</td></tr>';
+    return;
+  }
+  body.innerHTML = trips.map(t => `
+    <tr>
+      <td>${t.date}</td>
+      <td>${t.pointA} → ${t.pointB}</td>
+      <td>${t.odoStart??'—'}</td>
+      <td>${t.odoEnd??'—'}</td>
+      <td>${t.km!=null?t.km:'—'}</td>
+      <td>${t.fuelTopup===true?'✅':t.fuelTopup===false?'❌':'—'}</td>
+      <td>${t.fuelAmount!=null?t.fuelAmount+' L':'—'}</td>
+      <td><span class="fdot" style="background:${fuelColor(t.fuelLevel)}"></span>${t.fuelLevel}/8</td>
+    </tr>
+  `).join('');
+}
+
+function renderStats() {
+  const total = trips.reduce((s,t) => s+(t.km||0), 0);
+  const now   = new Date();
+  const mth   = trips.filter(t => {
+    const d=new Date(t.id); return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();
+  }).reduce((s,t)=>s+(t.km||0),0);
+  const avg   = trips.length ? total/trips.length : 0;
+  document.getElementById('s-total').textContent = total.toFixed(0)+' km';
+  document.getElementById('s-trips').textContent = trips.length;
+  document.getElementById('s-avg').textContent   = avg.toFixed(0)+' km';
+  document.getElementById('s-month').textContent = mth.toFixed(0)+' km';
+  const hasDraft = trips.some(t=>t.draft);
+  document.getElementById('draft-notice').classList.toggle('hidden', !hasDraft);
+}
+
+function renderAll() { renderHistory(); renderSummary(); renderStats(); }
+
+function dl(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], {type}));
+  a.download = name; a.click();
+}
+
+function exportJSON() {
+  dl('dnb-trips-backup.json', JSON.stringify(trips, null, 2), 'application/json');
+}
+
+function exportCSV() {
+  const hdr = ['Date','From (A)','To (B)','Plate','ODO Start','ODO End','KM','Top-up','Fuel Amount (L)','Fuel Level','Draft'];
+  const rows = trips.map(t => [
+    t.date, t.pointA, t.pointB, t.plate,
+    t.odoStart??'', t.odoEnd??'', t.km??'',
+    t.fuelTopup===true?'Yes':t.fuelTopup===false?'No':'',
+    t.fuelAmount??'', t.fuelLevel,
+    t.draft?'Yes':'No'
+  ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(','));
+  dl('dnb-trips.csv', [hdr.join(','), ...rows].join('\n'), 'text/csv;charset=utf-8');
+}
+
+function importJSON(ev) {
+  const file = ev.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!Array.isArray(data)) { alert('Invalid file format. Must be a JSON array.'); return; }
+      if (!confirm(`Import ${data.length} trip(s)? This will REPLACE your current data.`)) return;
+      trips = data;
+      persist();
+      renderAll();
+      alert(`✅ Imported ${data.length} trips successfully!`);
+    } catch { alert('❌ Failed to read file. Make sure it is a valid JSON export.'); }
+  };
+  reader.readAsText(file);
+  ev.target.value = '';
+}
+
+function clearAll() {
+  if (!trips.length) return;
+  if (!confirm('Delete ALL trips? This cannot be undone.')) return;
+  trips = [];
+  persist();
+  renderAll();
+}
+
+function persist() { localStorage.setItem('dnb-trips2', JSON.stringify(trips)); }
+
+function showPage(name) {
+  document.querySelectorAll('.pg').forEach(p => p.classList.remove('act'));
+  document.querySelectorAll('.nb').forEach(b => b.classList.remove('act'));
+  document.getElementById('pg-'+name).classList.add('act');
+  document.getElementById('nb-'+name).classList.add('act');
+}
+
+renderAll();
+</script>
+</body>
+</html>
